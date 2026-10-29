@@ -1,6 +1,11 @@
-name: Export ATRC Power Table
+name: Export ATRC Power Table (自动识别文件名)
 on:
   workflow_dispatch:
+    inputs:
+      atrc_filename:
+        description: '要导出的atrc文件名（留空=自动处理仓库里所有.atrc文件）'
+        required: false
+        default: ''
 
 jobs:
   convert:
@@ -13,25 +18,45 @@ jobs:
           ref: main
           lfs: true
 
-      - name: 打印环境 & 导出功耗表
+      - name: 打印环境 & 自动识别atrc文件
         run: |
           set -e
           xcodebuild -version
           xctrace version
-          FILE="PowerProfiler_26-10-29_135943_to_26-10-29_140318_001.atrc"
-          echo "=== 当前目录文件 ==="
-          ls -lh
-          echo "=== 目标文件信息 ==="
-          ls -lh "$FILE"
-          echo "=== 开始导出SystemPowerLevel表 ==="
-          xctrace export --input "$FILE" --xpath '/trace-toc/run[@number="1"]/data/table[@schema="SystemPowerLevel"]' --output power.xml
-          echo "=== 导出完成，输出文件大小 ==="
-          ls -lh power.xml
-          head -20 power.xml
+          INPUT_NAME="${{ github.event.inputs.atrc_filename }}"
+          mkdir -p output
 
-      - name: 上传power.xml制品
+          # 逻辑1：用户指定了文件名，就只处理这个文件
+          if [ -n "$INPUT_NAME" ] && [ -f "$INPUT_NAME" ]; then
+            FILES=("$INPUT_NAME")
+          # 逻辑2：留空，自动找仓库根目录所有.atrc文件
+          else
+            mapfile -t FILES < <(find . -maxdepth 1 -name "*.atrc" -type f)
+          fi
+
+          echo "=== 待处理atrc文件列表 ==="
+          printf '%s\n' "${FILES[@]}"
+
+          # 循环导出每一个atrc的SystemPowerLevel表
+          for FILE in "${FILES[@]}"; do
+            BASENAME=$(basename "$FILE" .atrc)
+            echo "=== 正在导出: $FILE ==="
+            ls -lh "$FILE"
+            xctrace export --input "$FILE" \
+              --xpath '/trace-toc/run[@number="1"]/data/table[@schema="SystemPowerLevel"]' \
+              --output "output/${BASENAME}_power.xml"
+            ls -lh "output/${BASENAME}_power.xml"
+          done
+
+          # 全部打包成zip
+          cd output
+          zip -r ../all_power_xml.zip *.xml
+          cd ..
+          ls -lh all_power_xml.zip
+
+      - name: 上传所有导出的xml
         uses: actions/upload-artifact@v4
         with:
-          name: power-table
-          path: power.xml
+          name: all-atrc-power-xml
+          path: all_power_xml.zip
           retention-days: 7
