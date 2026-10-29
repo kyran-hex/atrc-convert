@@ -1,9 +1,9 @@
-name: Convert ATRC Trace (Xcode27 Official Runner)
+name: Export ATRC toc (Xcode27)
 on:
   workflow_dispatch:
     inputs:
       trace_file:
-        description: 'ATRC 文件名称（仓库根目录，例如 power-test.atrc）'
+        description: '你的 .atrc 文件名'
         required: true
         type: string
 
@@ -14,24 +14,17 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: 打印 Xcode & xctrace 版本
+      - name: 打印版本
         run: |
           xcodebuild -version
           xctrace version
-
-      - name: 执行 xctrace 导出
-        run: |
           FILE=${{ github.event.inputs.trace_file }}
-          xctrace export --input "$FILE" --output trace_chrome.json --format chrome
-          xctrace export --input "$FILE" --output trace_data.csv --csv
-          ls -lh
+          # 导出目录清单toc.xml
+          xctrace export --input "$FILE" --toc --output toc.xml
 
-      - name: 打包产物
-        run: zip -r trace_result.zip trace_chrome.json trace_data.csv
-
-      - name: 上传制品
+      - name: 上传toc.xml
         uses: actions/upload-artifact@v4
         with:
-          name: atrc-output
-          path: trace_result.zip
+          name: trace-toc
+          path: toc.xml
           retention-days: 7
