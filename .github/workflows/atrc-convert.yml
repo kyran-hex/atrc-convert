@@ -2,10 +2,10 @@ name: Export ATRC toc (Xcode27)
 on:
   workflow_dispatch:
     inputs:
-      trace_file:
-        description: '你的 .atrc 文件名'
+      trace_filename:
+        description: 'atrc文件名'
         required: true
-        type: string
+        default: "PowerProfiler_26-10-29_135943_to_26-10-29_140318_001.atrc"
 
 jobs:
   convert:
@@ -14,12 +14,12 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: 打印版本
+      - name: 打印版本、列出目录
         run: |
           xcodebuild -version
           xctrace version
-          FILE=${{ github.event.inputs.trace_file }}
-          # 导出目录清单toc.xml
+          ls -la
+          FILE=${{ github.event.inputs.trace_filename }}
           xctrace export --input "$FILE" --toc --output toc.xml
 
       - name: 上传toc.xml
