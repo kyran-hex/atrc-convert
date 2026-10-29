@@ -1,34 +1,35 @@
-name: Export ATRC toc (Xcode27)
+name: Export ATRC Power Table
 on:
   workflow_dispatch:
-    inputs:
-      trace_filename:
-        description: 'atrc文件名'
-        required: true
-        default: "PowerProfiler_26-10-29_135943_to_26-10-29_140318_001.atrc"
 
 jobs:
   convert:
     runs-on: xcode-27
     steps:
-      - name: Checkout full repo with LFS
+      - name: Checkout repo with LFS
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: main
-          lfs: true   # 🔑 关键：强制拉取 Git LFS 里的大文件！
+          lfs: true
 
-      - name: 打印文件信息 & 导出SystemPowerLevel功耗表
+      - name: 打印环境 & 导出功耗表
         run: |
+          set -e
           xcodebuild -version
           xctrace version
+          FILE="PowerProfiler_26-10-29_135943_to_26-10-29_140318_001.atrc"
+          echo "=== 当前目录文件 ==="
+          ls -lh
+          echo "=== 目标文件信息 ==="
           ls -lh "$FILE"
+          echo "=== 开始导出SystemPowerLevel表 ==="
           xctrace export --input "$FILE" --xpath '/trace-toc/run[@number="1"]/data/table[@schema="SystemPowerLevel"]' --output power.xml
+          echo "=== 导出完成，输出文件大小 ==="
           ls -lh power.xml
+          head -20 power.xml
 
-
-
-      - name: 上传power.xml
+      - name: 上传power.xml制品
         uses: actions/upload-artifact@v4
         with:
           name: power-table
