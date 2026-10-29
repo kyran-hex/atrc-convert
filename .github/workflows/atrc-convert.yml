@@ -25,11 +25,12 @@ jobs:
           ls -lh
           FILE=${{ github.event.inputs.trace_filename }}
           file "$FILE"   # 看文件真实类型
-          xctrace export --input "$FILE" --toc --output toc.xml
+          xctrace export --input "$FILE" --table SystemPowerLevel --output power.xml
 
-      - name: 上传toc.xml
+
+      - name: 上传power.xml
         uses: actions/upload-artifact@v4
         with:
-          name: trace-toc
-          path: toc.xml
+          name: power-table
+          path: power.xml
           retention-days: 7
