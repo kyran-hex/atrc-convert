@@ -18,14 +18,14 @@ jobs:
           ref: main
           lfs: true   # 🔑 关键：强制拉取 Git LFS 里的大文件！
 
-      - name: 打印文件信息 & 导出toc
+      - name: 打印文件信息 & 导出SystemPowerLevel功耗表
         run: |
           xcodebuild -version
           xctrace version
-          ls -lh
-          FILE=${{ github.event.inputs.trace_filename }}
-          file "$FILE"   # 看文件真实类型
-          xctrace export --input "$FILE" --table SystemPowerLevel --output power.xml
+          ls -lh "$FILE"
+          xctrace export --input "$FILE" --xpath '/trace-toc/run[@number="1"]/data/table[@schema="SystemPowerLevel"]' --output power.xml
+          ls -lh power.xml
+
 
 
       - name: 上传power.xml
