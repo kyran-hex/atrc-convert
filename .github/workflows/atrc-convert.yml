@@ -1,9 +1,9 @@
-name: Convert ATRC Trace
+name: Convert ATRC Trace (Xcode27)
 on:
   workflow_dispatch:
     inputs:
       trace_file:
-        description: 'ATRC 文件名称（放在仓库根目录）例如 test.atrc'
+        description: 'ATRC 文件名称，例如 power-test.atrc'
         required: true
         type: string
 
@@ -14,6 +14,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: 安装 Xcode 27
+        run: |
+          # 安装 xcode-select-switch 工具
+          brew install xcode-select-switch
+          # 下载并切换到 Xcode27（Apple Developer 官方版本）
+          xcode-select-switch install 27.0
+          xcode-select -s /Applications/Xcode_27.0.app/Contents/Developer
+
       - name: 打印 Xcode & xctrace 版本
         run: |
           xcodebuild -version
@@ -22,16 +30,14 @@ jobs:
       - name: 执行 xctrace 导出
         run: |
           FILE=${{ github.event.inputs.trace_file }}
-          # 导出 chrome 格式 json (Perfetto)
           xctrace export --input "$FILE" --output trace_chrome.json --format chrome
-          # 导出 csv 指标
           xctrace export --input "$FILE" --output trace_data.csv --csv
           ls -lh
 
       - name: 打包产物
         run: zip -r trace_result.zip trace_chrome.json trace_data.csv
 
-      - name: 上传制品（下载用）
+      - name: 上传制品
         uses: actions/upload-artifact@v4
         with:
           name: atrc-output
