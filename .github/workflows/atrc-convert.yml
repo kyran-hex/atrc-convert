@@ -1,26 +1,18 @@
-name: Convert ATRC Trace (Xcode27)
+name: Convert ATRC Trace (Xcode27 Official Runner)
 on:
   workflow_dispatch:
     inputs:
       trace_file:
-        description: 'ATRC 文件名称，例如 power-test.atrc'
+        description: 'ATRC 文件名称（仓库根目录，例如 power-test.atrc）'
         required: true
         type: string
 
 jobs:
   convert:
-    runs-on: macos-15
+    runs-on: xcode-27
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
-      - name: 安装 Xcode 27
-        run: |
-          # 安装 xcode-select-switch 工具
-          brew install xcode-select-switch
-          # 下载并切换到 Xcode27（Apple Developer 官方版本）
-          xcode-select-switch install 27.0
-          xcode-select -s /Applications/Xcode_27.0.app/Contents/Developer
 
       - name: 打印 Xcode & xctrace 版本
         run: |
