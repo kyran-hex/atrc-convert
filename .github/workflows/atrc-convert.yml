@@ -1,0 +1,39 @@
+name: Convert ATRC Trace
+on:
+  workflow_dispatch:
+    inputs:
+      trace_file:
+        description: 'ATRC 文件名称（放在仓库根目录）例如 test.atrc'
+        required: true
+        type: string
+
+jobs:
+  convert:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: 打印 Xcode & xctrace 版本
+        run: |
+          xcodebuild -version
+          xctrace version
+
+      - name: 执行 xctrace 导出
+        run: |
+          FILE=${{ github.event.inputs.trace_file }}
+          # 导出 chrome 格式 json (Perfetto)
+          xctrace export --input "$FILE" --output trace_chrome.json --format chrome
+          # 导出 csv 指标
+          xctrace export --input "$FILE" --output trace_data.csv --csv
+          ls -lh
+
+      - name: 打包产物
+        run: zip -r trace_result.zip trace_chrome.json trace_data.csv
+
+      - name: 上传制品（下载用）
+        uses: actions/upload-artifact@v4
+        with:
+          name: atrc-output
+          path: trace_result.zip
+          retention-days: 7
